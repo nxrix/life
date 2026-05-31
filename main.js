@@ -181,7 +181,7 @@ type.addEventListener("change",()=>{
 reset.onclick = () => {
   t1 = 0;
   a1.c.fill(0);
-  if (type.value == 0) {
+  if (type.value == 0 || type.value == 1) {
     a1.c[z2+z2*z-z] = a1.c[z2+z2*z-z-1] = a1.c[z2+z2*z-1] = a1.c[z2+z2*z] = 1;
   } else {
     //for (let i=0;i<a1.s;i++) a1.c[i] = Math.random()<0.5?1:0;
@@ -194,7 +194,7 @@ reset.onclick = () => {
 }
 
 const anim = () => {
-  if (type.value==1||t1<z2-2) a1.step();
+  if (type.value!=0||t1<z2-2) a1.step();
   a1.setImageData(d1,turboLUT);
   ctx1.putImageData(img1,0,0);
   t1++;
