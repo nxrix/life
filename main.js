@@ -11,7 +11,7 @@ const z = 256;
 const zz = z*z;
 const z2 = z/2;
 
-grid.style.gridTemplateColumns = `repeat(auto-fit,minmax(${s}px,${s}px))`;
+grid.style.gridTemplateColumns = `repeat(auto-fill,${s}px)`;
 
 for (let i=0;i<max;i++) {
   const e = document.createElement("div");
