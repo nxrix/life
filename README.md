@@ -1,2 +1,3 @@
 # life
-All life-like cellular automaton rules
+
+Tool for exploring life-like cellular automaton rules
