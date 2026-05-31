@@ -1,0 +1,179 @@
+import { Automaton } from "./automaton.js";
+
+const max = 64;
+const maxp = 512*512/max;
+
+const s = 128;
+const ss = s*s;
+const s2 = s/2;
+
+const z = 256;
+const zz = z*z;
+const z2 = z/2;
+
+grid.style.gridTemplateColumns = `repeat(auto-fit,minmax(${s}px,${s}px))`;
+
+for (let i=0;i<max;i++) {
+  const e = document.createElement("div");
+  e.style.width = s+"px";
+  e.style.height = s+32+"px";
+  const m = document.createElement("img");
+  e.appendChild(m);
+  const n = document.createElement("div");
+  n.innerText = i;
+  e.appendChild(n);
+  grid.appendChild(e);
+}
+
+const setCols = () => {
+  grid.style.maxWidth = "";
+  const w = grid.clientWidth;
+  const cols = [16,12,8,4,2,1].find(i=>i*(s+4)-4<=w)||1;
+  grid.style.maxWidth = cols*(s+4)-4+"px";
+}
+window.addEventListener("resize",setCols);
+setCols();
+
+const getRule = (n) => {
+  const b = [];
+  for (let i = 0; i < 9; i++) {
+    if (n & (1 << i)) b.push(i);
+  }
+  return b;
+}
+
+const updateURL = () => {
+  history.replaceState({},"","?p="+(p+1)+"&r="+r);
+}
+
+const page = (d) => {
+  const po = p;
+  p = Math.max(0,Math.min(maxp-1,p+d));
+  input0.value = p+1;
+  input1.value = p+1;
+  if (p!==po) {
+    updateURL();
+    if (id !== null) {
+      cancelAnimationFrame(id);
+      id = null;
+    }
+    //window.scrollTo({ top: 0, behavior: "smooth" });
+    t = 0;
+    for (let i=0;i<max;i++) {
+      grid.children[i].children[0].src = "";
+      const q = i+max*p;
+      const br = getRule(q%512);
+      const sr = getRule(Math.floor(q/512));
+      grid.children[i].children[1].innerText = q+"\nB"+br.join("")+"/S"+sr.join("");
+      grid.children[i].onclick = () => { rule(q) };
+    }
+    id = requestAnimationFrame(u);
+  }
+}
+
+const ipage = (e) => {
+  const v = parseInt(e.target.value);
+  if (!isNaN(v)) {
+    if (e.type === "keydown") {
+      if (e.key === "Enter") page(v-p-1);
+    } else if (e.type === "blur") {
+      page(v-p-1);
+    }
+  }
+}
+
+prev0.onclick = prev1.onclick = () => { page(-1) };
+next0.onclick = next1.onclick = () => { page(+1) };
+
+input0.addEventListener("keydown",ipage);
+input1.addEventListener("keydown",ipage);
+input0.addEventListener("blur",ipage);
+input1.addEventListener("blur",ipage);
+
+const dot4 = ([x0,y0,z0,w0],[x1,y1,z1,w1]) => x0*x1+y0*y1+z0*z1+w0*w1;
+const dot2 = ([x0,y0],[x1,y1]) => x0*x1+y0*y1;
+
+const turbo = (x) => {
+  const kr4 = [0.13572138,  4.61539260, -42.66032258, 132.13108234];
+  const kg4 = [0.09140261,  2.19418839,   4.84296658, -14.18503333];
+  const kb4 = [0.10667330, 12.64194608, -60.58204836, 110.36276771];
+  const kr2 = [-152.94239396, 59.28637943];
+  const kg2 = [   4.27729857,  2.82956604];
+  const kb2 = [ -89.90310912, 27.34824973];
+  const v4 = [1,x,x*x,x*x*x];
+  const v2 = [v4[2]*v4[2],v4[3]*v4[2]];
+  return [
+    dot4(v4,kr4)+dot2(v2,kr2),
+    dot4(v4,kg4)+dot2(v2,kg2),
+    dot4(v4,kb4)+dot2(v2,kb2)
+  ];
+}
+
+const turboLUT = [];
+for (let i=0;i<18;i++) {
+  turboLUT[i] = turbo(i/18).map(j=>j*255);
+}
+
+const c0 = document.createElement("canvas");
+c0.width = c0.height = s;
+const ctx0 = c0.getContext("2d");
+const img0 = ctx0.createImageData(s,s);
+const d0 = img0.data;
+for (let i=3;i<ss*4;i+=4) d0[i] = 255;
+
+const a0 = new Automaton(s,s);
+
+let t = 0;
+let p = -1;
+let r = 0;
+let id = null;
+
+const u = () => {
+  const q = t+max*p;
+  if (q<512*512) {
+    a0.r = q;
+    a0.c.fill(0);
+    a0.c[s2+s2*s-s] = a0.c[s2+s2*s-s-1] = a0.c[s2+s2*s-1] = a0.c[s2+s2*s] = 1;
+    a0.stepn(s2-2,4);
+    a0.setImageData(d0,turboLUT);
+    ctx0.putImageData(img0,0,0);
+    grid.children[t].children[0].src = c0.toDataURL();
+  }
+  t++;
+  if (t<max) id = requestAnimationFrame(u);
+  else id = null;
+}
+
+c1.width = c1.height = z;
+c1.style.width = c1.style.height = z*2+"px";
+const ctx1 = c1.getContext("2d");
+const img1 = ctx1.createImageData(z,z);
+const d1 = img1.data;
+for (let i=3;i<zz*4;i+=4) d1[i] = 255;
+
+const a1 = new Automaton(256,256);
+
+const rule = (q) => {
+  r = q;
+  a1.r = q;
+  reset.onclick();
+  updateURL();
+}
+
+reset.onclick = () => {
+  a1.c.fill(0);
+  a1.c[z2+z2*z-z] = a1.c[z2+z2*z-z-1] = a1.c[z2+z2*z-1] = a1.c[z2+z2*z] = 1;
+  a1.setImageData(d1,turboLUT);
+  ctx1.putImageData(img1,0,0);
+}
+
+step.onclick = () => {
+  a1.step();
+  a1.setImageData(d1,turboLUT);
+  ctx1.putImageData(img1,0,0);
+}
+
+const params = new URLSearchParams(window.location.search);
+page(parseInt(params.get("p"))||1);
+rule(parseInt(params.get("r"))||0);
+reset.onclick();
