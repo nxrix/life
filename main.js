@@ -31,8 +31,8 @@ const setCols = () => {
   const cols = [16,12,8,4,2,1].find(i=>i*(s+4)-4<=w)||1;
   grid.style.maxWidth = cols*(s+4)-4+"px";
 }
-window.addEventListener("resize",setCols);
-setCols();
+//window.addEventListener("resize",setCols);
+//setCols();
 
 const getRule = (n) => {
   const b = [];
@@ -194,9 +194,11 @@ reset.onclick = () => {
 }
 
 const anim = () => {
-  if (type.value!=0||t1<z2-2) a1.step();
-  a1.setImageData(d1,turboLUT);
-  ctx1.putImageData(img1,0,0);
+  if (type.value!=0||t1<z2-2) {
+    a1.step();
+    a1.setImageData(d1,turboLUT);
+    ctx1.putImageData(img1,0,0);
+  }
   t1++;
   requestAnimationFrame(anim);
 }
