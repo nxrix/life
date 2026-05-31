@@ -48,13 +48,17 @@ canvas, img {
 
 <h1>Life</h1>
 
-<canvas id="c1"></canvas>
+<canvas id="c1" style="border:1px solid var(--c3);border-radius:1px;position:sticky;top:14px"></canvas>
 <br>
 
 <div>
-  <input type="text" id="ruleInput" placeholder="Rule" style="width:75px;padding-left:6px">
+  <input type="number" id="ruleInput" placeholder="Rule" style="width:75px;padding-left:6px">
+  <button id="random">🎲</button>
+  <select id="type">
+    <option value="0">2x2</option>
+    <option value="1">Random</option>
+  </select>
   <button id="reset">Reset</button>
-  <button id="step">Step</button>
 </div>
 
 <br>
@@ -70,4 +74,5 @@ canvas, img {
   <input type="text" id="input1" placeholder="Page">
   <button id="next1">></button>
 </div>
+
 <script type="module" src="./main.js"></script>
