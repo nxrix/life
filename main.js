@@ -43,7 +43,7 @@ const getRule = (n) => {
 }
 
 const updateURL = () => {
-  history.replaceState({},"","?p="+(p+1)+"&r="+r);
+  history.replaceState({}, "", `?p=${p+1}&r=${r}&t=${type.value}`);
 }
 
 const page = (d) => {
@@ -58,7 +58,7 @@ const page = (d) => {
       id = null;
     }
     //window.scrollTo({ top: 0, behavior: "smooth" });
-    t = 0;
+    t0 = 0;
     for (let i=0;i<max;i++) {
       grid.children[i].children[0].src = "";
       const q = i+max*p;
@@ -123,13 +123,14 @@ for (let i=3;i<ss*4;i+=4) d0[i] = 255;
 
 const a0 = new Automaton(s,s);
 
-let t = 0;
+let t0 = 0;
+let t1 = 0;
 let p = -1;
 let r = 0;
 let id = null;
 
 const u = () => {
-  const q = t+max*p;
+  const q = t0+max*p;
   if (q<512*512) {
     a0.r = q;
     a0.c.fill(0);
@@ -137,15 +138,15 @@ const u = () => {
     a0.stepn(s2-2,4);
     a0.setImageData(d0,turboLUT);
     ctx0.putImageData(img0,0,0);
-    grid.children[t].children[0].src = c0.toDataURL();
+    grid.children[t0].children[0].src = c0.toDataURL();
   }
-  t++;
-  if (t<max) id = requestAnimationFrame(u);
+  t0++;
+  if (t0<max) id = requestAnimationFrame(u);
   else id = null;
 }
 
 c1.width = c1.height = z;
-c1.style.width = c1.style.height = z*2+"px";
+//c1.style.width = c1.style.height = z*2+"px";
 const ctx1 = c1.getContext("2d");
 const img1 = ctx1.createImageData(z,z);
 const d1 = img1.data;
@@ -154,26 +155,54 @@ for (let i=3;i<zz*4;i+=4) d1[i] = 255;
 const a1 = new Automaton(256,256);
 
 const rule = (q) => {
-  r = q;
-  a1.r = q;
+  r = a1.r = ruleInput.value = q;
   reset.onclick();
   updateURL();
 }
 
-reset.onclick = () => {
-  a1.c.fill(0);
-  a1.c[z2+z2*z-z] = a1.c[z2+z2*z-z-1] = a1.c[z2+z2*z-1] = a1.c[z2+z2*z] = 1;
-  a1.setImageData(d1,turboLUT);
-  ctx1.putImageData(img1,0,0);
+ruleInput.addEventListener("input",()=>{
+  r = a1.r = parseInt(ruleInput.value);
+  page((r/max|0)-p);
+  reset.onclick();
+  updateURL();
+});
+
+random.onclick = () => {
+  const q = Math.random()*0x3ffff|0;
+  page((q/max|0)-p);
+  rule(q);
 }
 
-step.onclick = () => {
-  a1.step();
+type.addEventListener("change",()=>{
+  reset.onclick();
+  updateURL();
+});
+
+reset.onclick = () => {
+  t1 = 0;
+  a1.c.fill(0);
+  if (type.value == 0) {
+    a1.c[z2+z2*z-z] = a1.c[z2+z2*z-z-1] = a1.c[z2+z2*z-1] = a1.c[z2+z2*z] = 1;
+  } else {
+    //for (let i=0;i<a1.s;i++) a1.c[i] = Math.random()<0.5?1:0;
+    for (let y=0;y<a1.h;y++) {
+      for (let x=0;x<a1.w;x++) {
+        a1.c[x+y*a1.w] = Math.max(Math.abs(x-a1.w/2),Math.abs(y-a1.h/2))<Math.min(a1.w,a1.h)/4?(Math.random()<0.5?1:0):0;
+      }
+    }
+  }
+}
+
+const anim = () => {
+  if (type.value==1||t1<z2-2) a1.step();
   a1.setImageData(d1,turboLUT);
   ctx1.putImageData(img1,0,0);
+  t1++;
+  requestAnimationFrame(anim);
 }
+anim();
 
 const params = new URLSearchParams(window.location.search);
 page(parseInt(params.get("p"))||1);
+type.value = params.get("t")||"0";
 rule(parseInt(params.get("r"))||0);
-reset.onclick();
