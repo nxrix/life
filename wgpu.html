@@ -28,7 +28,12 @@ layout: default
 <h1>?</h1>
 <canvas id="c" style="width:90%;image-rendering:pixelated"></canvas>
 <br>
-<div>
+<select id="type">
+  <option value="0">2x2 - 62</option>
+  <option value="1">2x2</option>
+  <option value="2">Random</option>
+</select>
+<div class="controls">
   <button id="prev"><</button>
   <input id="ruleInput" type="number" value="0" min="0">
   <button id="next">></button>
@@ -80,7 +85,9 @@ const init = () => {
       const oy = row*s;
       const lx = i-ox;
       const ly = j-oy;
-      grid[j*z+i] = Math.max(Math.abs(lx-s2+0.5),Math.abs(ly-s2+0.5))<s2/4?(Math.random()+0.5|0):0;
+      grid[j*z+i] = Math.max(Math.abs(lx-s2+0.5),Math.abs(ly-s2+0.5))<(type.value==2?(s2/4):2)?
+        (type.value==2?(Math.random()+0.5|0):1):
+        0;
     }
   }
   device.queue.writeBuffer(gridA,0,grid);
@@ -243,6 +250,7 @@ const rp = () => {
   t=0;
 }
 ruleInput.addEventListener("input",rp);
+type.addEventListener("change",rp);
 prev.onclick = () => {
   ruleInput.value=(ruleInput.value|0)-1;
   rp();
@@ -282,7 +290,7 @@ const update = () => {
 
   device.queue.submit([encoder.finish()]);
 
-  displayIsA = !displayIsA;
+  if (type.value==2||t<s2-2) displayIsA = !displayIsA;
   t++;
   requestAnimationFrame(update);
 }
