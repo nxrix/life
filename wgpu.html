@@ -1,3 +1,7 @@
+---
+layout: default
+---
+
 <h1>?</h1>
 <canvas id="c" style="width:90%;image-rendering:pixelated"></canvas>
 <br>
@@ -170,14 +174,14 @@ const computePipeline = device.createComputePipeline({
 });
 
 const renderPipeline = device.createRenderPipeline({
-    layout: device.createPipelineLayout({ bindGroupLayouts: [renderBindGroupLayout] }),
-    vertex: { module: renderShader, entryPoint: "vs" },
-    fragment: {
-        module: renderShader,
-        entryPoint: "fs",
-        targets: [{ format }],
-    },
-    primitive: { topology: "triangle-list" },
+  layout: device.createPipelineLayout({ bindGroupLayouts: [renderBindGroupLayout] }),
+  vertex: { module: renderShader, entryPoint: "vs" },
+  fragment: {
+    module: renderShader,
+    entryPoint: "fs",
+    targets: [{ format }],
+  },
+  primitive: { topology: "triangle-list" },
 });
 
 const computeBG_AB = device.createBindGroup({
@@ -208,8 +212,6 @@ const renderBG_B = device.createBindGroup({
   entries: [{ binding: 0, resource: { buffer: gridB } }],
 });
 
-let displayIsA = true;
-
 const rp = () => {
   device.queue.writeBuffer(ruleBuffer, 0, new Uint32Array([parseInt(ruleInput.value)||0]));
   init();
@@ -225,7 +227,9 @@ next.onclick = () => {
   rp();
 }
 
-function update() {
+let displayIsA = true;
+let t = 0;
+const update = () => {
   const computeBG = displayIsA ? computeBG_AB : computeBG_BA;
   const renderBG = displayIsA ? renderBG_A : renderBG_B;
 
@@ -234,7 +238,7 @@ function update() {
   const computePass = encoder.beginComputePass();
   computePass.setPipeline(computePipeline);
   computePass.setBindGroup(0, computeBG);
-  computePass.dispatchWorkgroups(z / 16, z / 16);
+  computePass.dispatchWorkgroups(z/16,z/16);
   computePass.end();
 
   const view = ctx.getCurrentTexture().createView();
@@ -255,9 +259,8 @@ function update() {
 
   displayIsA = !displayIsA;
   t++;
-  requestAnimationFrame(frame);
+  requestAnimationFrame(update);
 }
-let t=0
 update();
 
 </script>
