@@ -2,12 +2,37 @@
 layout: default
 ---
 
+<style>
+
+.controls {
+  display: flex;
+  width: 192px;
+  margin: 0 auto;
+  gap: 4px;
+  height: 28px;
+}
+.controls button {
+  height: 100%;
+  aspect-ratio: 2;
+  flex-shrink: 0;
+}
+.controls input {
+  flex: 1;
+  min-width: 0;
+  width: 0;
+  text-align: center;
+}
+
+</style>
+
 <h1>?</h1>
 <canvas id="c" style="width:90%;image-rendering:pixelated"></canvas>
 <br>
-<button id="prev"><</button>
-<input id="ruleInput" type="number" value="0" min="0">
-<button id="next">></button>
+<div>
+  <button id="prev"><</button>
+  <input id="ruleInput" type="number" value="0" min="0">
+  <button id="next">></button>
+</div>
 
 <script type="module">
 
