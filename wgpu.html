@@ -7,7 +7,6 @@ layout: default
 .controls {
   display: flex;
   width: 192px;
-  margin: 0 auto;
   gap: 4px;
   height: 28px;
 }
@@ -77,6 +76,7 @@ const ruleBuffer = device.createBuffer({
 device.queue.writeBuffer(ruleBuffer, 0, new Uint32Array([0]));
         
 const init = () => {
+  const t = parseInt(type.value);
   for (let i=0;i<z;i++) {
     for (let j=0;j<z;j++) {
       const col = (i/s)|0;
@@ -85,8 +85,8 @@ const init = () => {
       const oy = row*s;
       const lx = i-ox;
       const ly = j-oy;
-      grid[j*z+i] = Math.max(Math.abs(lx-s2+0.5),Math.abs(ly-s2+0.5))<(type.value==2?(s2/4):2)?
-        (type.value==2?(Math.random()+0.5|0):1):
+      grid[j*z+i] = Math.max(Math.abs(lx-s2+0.5),Math.abs(ly-s2+0.5))<(t===2?(s2/4):1)?
+        (t===2?(Math.random()+0.5|0):1):
         0;
     }
   }
