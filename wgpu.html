@@ -1,0 +1,263 @@
+<h1>?</h1>
+<canvas id="c" style="width:90%;image-rendering:pixelated"></canvas>
+<br>
+<button id="prev"><</button>
+<input id="ruleInput" type="number" value="0" min="0">
+<button id="next">></button>
+
+<script type="module">
+
+const s = 128;
+const s2 = s/2;
+const z = s*8;
+const zz = z*z;
+c.width = z;
+c.height = z;
+
+if (!navigator.gpu) {
+  throw new Error("WebGPU not supported");
+}
+
+const adapter = await navigator.gpu.requestAdapter();
+const device = await adapter.requestDevice();
+const format = navigator.gpu.getPreferredCanvasFormat();
+const ctx = c.getContext("webgpu");
+ctx.configure({ device, format });
+
+const grid = new Uint32Array(zz);
+//for (let i = 0; i < zz; i++) grid[i] = Math.random() < 0.4 ? 1 : 0;
+
+const gridA = device.createBuffer({
+  size: zz*4,
+  usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+});
+const gridB = device.createBuffer({
+  size: zz*4,
+  usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+});
+const ruleBuffer = device.createBuffer({
+  size: 4,
+  usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+});
+
+device.queue.writeBuffer(ruleBuffer, 0, new Uint32Array([0]));
+        
+const init = () => {
+  for (let i=0;i<z;i++) {
+    for (let j=0;j<z;j++) {
+      const col = (i/s)|0;
+      const row = (j/s)|0;
+      const ox = col*s;
+      const oy = row*s;
+      const lx = i-ox;
+      const ly = j-oy;
+      grid[j*z+i] = Math.max(Math.abs(lx-s2+0.5),Math.abs(ly-s2+0.5))<s2/4?(Math.random()+0.5|0):0;
+    }
+  }
+  device.queue.writeBuffer(gridA,0,grid);
+  device.queue.writeBuffer(gridB,0,grid);
+}
+init();
+
+const computeShader = device.createShaderModule({
+  code: `
+    @group(0) @binding(0) var<storage, read> inputGrid: array<u32>;
+    @group(0) @binding(1) var<storage, read_write> outputGrid: array<u32>;
+    @group(0) @binding(2) var<uniform> rule: u32;
+
+    @compute @workgroup_size(16, 16)
+    fn main(@builtin(global_invocation_id) id: vec3<u32>) {
+      let x = id.x;
+      let y = id.y;
+      if (x >= ${z}u || y >= ${z}u) { return; }
+      let col = x / ${s}u;
+      let row = y / ${s}u;
+      let ox = col * ${s}u;
+      let oy = row * ${s}u;
+      let lx = x - ox;
+      let ly = y - oy;
+      let idx = y * ${z}u + x;
+      let a = inputGrid[idx];
+      var count: u32 = 0u;
+      for (var dy: i32 = -1i; dy <= 1i; dy++) {
+        for (var dx: i32 = -1i; dx <= 1i; dx++) {
+          if (dx == 0i && dy == 0i) { continue; }
+          let nlx = (i32(lx) + dx + ${s}i) % ${s}i;
+          let nly = (i32(ly) + dy + ${s}i) % ${s}i;
+          let nx = ox + u32(nlx);
+          let ny = oy + u32(nly);
+          count += inputGrid[ny * ${z}u + nx];
+        }
+      }
+      let r = (rule*64+col+row*8);
+      outputGrid[idx] = (r>>(a*9u+count))&1u;
+    }
+  `,
+});
+
+const renderShader = device.createShaderModule({
+  code: `
+    @group(0) @binding(0) var<storage, read> grid: array<u32>;
+
+    @vertex
+    fn vs(@builtin(vertex_index) vi: u32) -> @builtin(position) vec4<f32> {
+      let x = f32(i32(vi &1u)*4-1);
+      let y = f32(i32(vi>>1u)*4-1);
+      return vec4(x,y,0,1);
+    }
+
+    fn turbo(x: f32) -> vec3<f32> {
+      let kr4 = vec4<f32>(0.13572138,  4.61539260, -42.66032258, 132.13108234);
+      let kg4 = vec4<f32>(0.09140261,  2.19418839,   4.84296658, -14.18503333);
+      let kb4 = vec4<f32>(0.10667330, 12.64194608, -60.58204836, 110.36276771);
+      let kr2 = vec2<f32>(-152.94239396,  59.28637943);
+      let kg2 = vec2<f32>(  4.27729857,   2.82956604);
+      let kb2 = vec2<f32>(-89.90310912,  27.34824973);
+      let v4 = vec4<f32>(1.0,x,x*x,x*x*x);
+      let v2 = vec2<f32>(v4.z*v4.z,v4.w*v4.z);
+      return vec3<f32>(
+        dot(v4,kr4)+dot(v2,kr2),
+        dot(v4,kg4)+dot(v2,kg2),
+        dot(v4,kb4)+dot(v2,kb2)
+      );
+    }
+
+    @fragment
+    fn fs(@builtin(position) pos: vec4<f32>) -> @location(0) vec4<f32> {
+      let x = u32(pos.x);
+      let y = u32(pos.y);
+      let idx = y*${z}+x;
+      let alive = grid[idx];
+      var count: u32 = 0u;
+      let col = x / ${s}u;
+      let row = y / ${s}u;
+      let ox = col * ${s}u;
+      let oy = row * ${s}u;
+      let lx = x-ox;
+      let ly = y-oy;
+      for (var dy: i32 = -1i; dy <= 1i; dy++) {
+        for (var dx: i32 = -1i; dx <= 1i; dx++) {
+          if (dx == 0i && dy == 0i) { continue; }
+          let nlx = (i32(lx) + dx + ${s}i) % ${s}i;
+          let nly = (i32(ly) + dy + ${s}i) % ${s}i;
+          let nx = ox + u32(nlx);
+          let ny = oy + u32(nly);
+          count += grid[ny * ${z}u + nx];
+        }
+      }
+      return vec4(turbo(f32(count+alive*9)/18),1);
+    }
+  `,
+});
+
+const computeBindGroupLayout = device.createBindGroupLayout({
+  entries: [
+    { binding: 0, visibility: GPUShaderStage.COMPUTE, buffer: { type: "read-only-storage" } },
+    { binding: 1, visibility: GPUShaderStage.COMPUTE, buffer: { type: "storage" } },
+    { binding: 2, visibility: GPUShaderStage.COMPUTE, buffer: { type: "uniform" } },
+  ],
+});
+
+const renderBindGroupLayout = device.createBindGroupLayout({
+  entries: [
+    { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: "read-only-storage" } },
+  ],
+});
+
+const computePipeline = device.createComputePipeline({
+  layout: device.createPipelineLayout({ bindGroupLayouts: [computeBindGroupLayout] }),
+  compute: { module: computeShader, entryPoint: "main" },
+});
+
+const renderPipeline = device.createRenderPipeline({
+    layout: device.createPipelineLayout({ bindGroupLayouts: [renderBindGroupLayout] }),
+    vertex: { module: renderShader, entryPoint: "vs" },
+    fragment: {
+        module: renderShader,
+        entryPoint: "fs",
+        targets: [{ format }],
+    },
+    primitive: { topology: "triangle-list" },
+});
+
+const computeBG_AB = device.createBindGroup({
+  layout: computeBindGroupLayout,
+  entries: [
+    { binding: 0, resource: { buffer: gridA } },
+    { binding: 1, resource: { buffer: gridB } },
+    { binding: 2, resource: { buffer: ruleBuffer } },
+  ],
+});
+
+const computeBG_BA = device.createBindGroup({
+  layout: computeBindGroupLayout,
+  entries: [
+    { binding: 0, resource: { buffer: gridB } },
+    { binding: 1, resource: { buffer: gridA } },
+    { binding: 2, resource: { buffer: ruleBuffer } },
+  ],
+});
+
+const renderBG_A = device.createBindGroup({
+  layout: renderBindGroupLayout,
+  entries: [{ binding: 0, resource: { buffer: gridA } }],
+});
+
+const renderBG_B = device.createBindGroup({
+  layout: renderBindGroupLayout,
+  entries: [{ binding: 0, resource: { buffer: gridB } }],
+});
+
+let displayIsA = true;
+
+const rp = () => {
+  device.queue.writeBuffer(ruleBuffer, 0, new Uint32Array([parseInt(ruleInput.value)||0]));
+  init();
+  t=0;
+}
+ruleInput.addEventListener("input",rp);
+prev.onclick = () => {
+  ruleInput.value=(ruleInput.value|0)-1;
+  rp();
+}
+next.onclick = () => {
+  ruleInput.value=(ruleInput.value|0)+1;
+  rp();
+}
+
+function update() {
+  const computeBG = displayIsA ? computeBG_AB : computeBG_BA;
+  const renderBG = displayIsA ? renderBG_A : renderBG_B;
+
+  const encoder = device.createCommandEncoder();
+
+  const computePass = encoder.beginComputePass();
+  computePass.setPipeline(computePipeline);
+  computePass.setBindGroup(0, computeBG);
+  computePass.dispatchWorkgroups(z / 16, z / 16);
+  computePass.end();
+
+  const view = ctx.getCurrentTexture().createView();
+  const renderPass = encoder.beginRenderPass({
+    colorAttachments: [{
+      view,
+      loadOp: "clear",
+      storeOp: "store",
+      clearValue: { r: 0, g: 0, b: 0, a: 1 },
+    }],
+  });
+  renderPass.setPipeline(renderPipeline);
+  renderPass.setBindGroup(0, renderBG);
+  renderPass.draw(3);
+  renderPass.end();
+
+  device.queue.submit([encoder.finish()]);
+
+  displayIsA = !displayIsA;
+  t++;
+  requestAnimationFrame(frame);
+}
+let t=0
+update();
+
+</script>
