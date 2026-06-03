@@ -57,7 +57,7 @@ const page = (d) => {
       cancelAnimationFrame(id);
       id = null;
     }
-    //window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: "smooth" });
     t0 = 0;
     for (let i=0;i<max;i++) {
       grid.children[i].children[0].src = "";
