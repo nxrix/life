@@ -173,13 +173,13 @@ ruleInput.addEventListener("input",() => {
   updateURL();
 });
 
-const s2q = s => {
+const s2q = (s) => {
   const m = s.match(/^B\s*([0-8]*)\s*\/?\s*S\s*([0-8]*)$/i);
   if (!m) return null;
-  let [_,b,s] = m;
+  let [_,br,sr] = m;
   let r = 0;
-  for (let c of b) r |= 1 << c;
-  for (let c of s) r |= 1 << (+c + 9);
+  for (let c of br) r |= 1 << c;
+  for (let c of sr) r |= 1 << (+c + 9);
   return r;
 };
 
