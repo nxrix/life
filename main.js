@@ -156,12 +156,37 @@ const a1 = new Automaton(256,256);
 
 const rule = (q) => {
   r = a1.r = ruleInput.value = q;
+  const br = getRule(q%512);
+  const sr = getRule(Math.floor(q/512));
+  ruleInput2.value = q+"\nB"+br.join("")+"/S"+sr.join("");
   reset.onclick();
   updateURL();
 }
 
-ruleInput.addEventListener("input",()=>{
+ruleInput.addEventListener("input",() => {
   r = a1.r = parseInt(ruleInput.value);
+  const br = getRule(q%512);
+  const sr = getRule(Math.floor(q/512));
+  ruleInput2.value = q+"\nB"+br.join("")+"/S"+sr.join("");
+  page((r/max|0)-p);
+  reset.onclick();
+  updateURL();
+});
+
+const s2q = s => {
+  const m = s.match(/^B\s*([0-8]*)\s*\/?\s*S\s*([0-8]*)$/i);
+  if (!m) return null;
+  let [_,b,s] = m;
+  let r = 0;
+  for (let c of b) r |= 1 << c;
+  for (let c of s) r |= 1 << (+c + 9);
+  return r;
+};
+
+ruleInput2.addEventListener("input",() => {
+  const q = s2q(ruleInput2.value);
+  if (q===null) return;
+  r = a1.r = parseInt(q);
   page((r/max|0)-p);
   reset.onclick();
   updateURL();
