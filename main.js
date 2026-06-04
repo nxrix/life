@@ -158,16 +158,16 @@ const rule = (q) => {
   r = a1.r = ruleInput.value = q;
   const br = getRule(q%512);
   const sr = getRule(Math.floor(q/512));
-  ruleInput2.value = q+"\nB"+br.join("")+"/S"+sr.join("");
+  ruleInput2.value = "B"+br.join("")+"/S"+sr.join("");
   reset.onclick();
   updateURL();
 }
 
 ruleInput.addEventListener("input",() => {
   r = a1.r = parseInt(ruleInput.value);
-  const br = getRule(q%512);
-  const sr = getRule(Math.floor(q/512));
-  ruleInput2.value = q+"\nB"+br.join("")+"/S"+sr.join("");
+  const br = getRule(r%512);
+  const sr = getRule(Math.floor(r/512));
+  ruleInput2.value = "B"+br.join("")+"/S"+sr.join("");
   page((r/max|0)-p);
   reset.onclick();
   updateURL();
