@@ -186,7 +186,7 @@ const s2q = s => {
 ruleInput2.addEventListener("input",() => {
   const q = s2q(ruleInput2.value);
   if (q===null) return;
-  r = a1.r = parseInt(q);
+  r = a1.r = q;
   page((r/max|0)-p);
   reset.onclick();
   updateURL();
