@@ -187,14 +187,22 @@ reset.onclick = () => {
     //for (let i=0;i<a1.s;i++) a1.c[i] = Math.random()<0.5?1:0;
     for (let y=0;y<a1.h;y++) {
       for (let x=0;x<a1.w;x++) {
-        a1.c[x+y*a1.w] = Math.max(Math.abs(x-a1.w/2),Math.abs(y-a1.h/2))<Math.min(a1.w,a1.h)/4?(Math.random()<0.5?1:0):0;
+        a1.c[x+y*a1.w] = Math.max(Math.abs(x-a1.w/2),Math.abs(y-a1.h/2))<Math.min(a1.w,a1.h)/8?(Math.random()<0.5?1:0):0;
       }
     }
   }
 }
+step.onclick = () => {
+  a1.step();
+}
+let playing = true;
+play.onclick = () => {
+  play.innerText = playing?"Play":"Pause";
+  playing = !playing;
+}
 
 const anim = () => {
-  if (type.value!=0||t1<z2-2) {
+  if (playing&&(type.value!=0||t1<z2-2)) {
     a1.step();
     a1.setImageData(d1,turboLUT);
     ctx1.putImageData(img1,0,0);
