@@ -217,17 +217,13 @@ reset.onclick = () => {
       }
     }
   }
-  if (!playing) {
-    a1.setImageData(d1,turboLUT);
-    ctx1.putImageData(img1,0,0);
-  }
+  a1.setImageData(d1,turboLUT);
+  ctx1.putImageData(img1,0,0);
 }
 step.onclick = () => {
   a1.step();
-  if (!playing) {
-    a1.setImageData(d1,turboLUT);
-    ctx1.putImageData(img1,0,0);
-  }
+  a1.setImageData(d1,turboLUT);
+  ctx1.putImageData(img1,0,0);
 }
 play.onclick = () => {
   play.innerText = playing?"Play":"Pause";
