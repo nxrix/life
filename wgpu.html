@@ -60,7 +60,6 @@ const ctx = c.getContext("webgpu");
 ctx.configure({ device, format });
 
 const grid = new Uint32Array(zz);
-//for (let i = 0; i < zz; i++) grid[i] = Math.random() < 0.4 ? 1 : 0;
 
 const gridA = device.createBuffer({
   size: zz*4,
