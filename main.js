@@ -239,8 +239,8 @@ const anim = () => {
     a1.step();
     a1.setImageData(d1,turboLUT);
     ctx1.putImageData(img1,0,0);
+    t1++;
   }
-  t1++;
   requestAnimationFrame(anim);
 }
 anim();
